@@ -1,0 +1,10 @@
+[package]
+name = "playlist-lint"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "A line-numbered linter for M3U/M3U8 audio playlists"
+
+[[bin]]
+name = "plint"
+path = "src/main.rs"
