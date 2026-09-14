@@ -4,6 +4,7 @@ use lint::{lint_playlist, Finding};
 use std::env;
 use std::fs;
 use std::io::{self, Read};
+use std::path::Path;
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
@@ -15,7 +16,7 @@ fn main() -> ExitCode {
     if args.is_empty() {
         match read_stdin() {
             Ok(contents) => {
-                let findings = lint_playlist(&contents);
+                let findings = lint_playlist(&contents, None);
                 had_findings |= print_findings("<stdin>", &findings);
             }
             Err(e) => {
@@ -33,7 +34,12 @@ fn main() -> ExitCode {
 
             match contents {
                 Ok(contents) => {
-                    let findings = lint_playlist(&contents);
+                    let base_dir = if path == "-" {
+                        None
+                    } else {
+                        Path::new(path).parent()
+                    };
+                    let findings = lint_playlist(&contents, base_dir);
                     had_findings |= print_findings(path, &findings);
                 }
                 Err(e) => {

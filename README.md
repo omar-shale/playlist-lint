@@ -21,6 +21,9 @@ same handful of problems:
 - a playlist missing the `#EXTM3U` header, which some players will
   refuse to treat as extended M3U at all, silently dropping titles and
   durations
+- a local track reference that points at a file that isn't there,
+  usually because the playlist was moved without the media, or a track
+  was renamed or deleted after the playlist was built
 
 None of these cause an error until playback, and the symptom (wrong
 title showing, a track missing, playback stalling) rarely points back
@@ -54,6 +57,12 @@ $ generate-playlist.sh | plint
 ```
 $ cat extra.m3u | plint main.m3u -
 ```
+
+Local track paths (anything that isn't a URL) are checked for
+existence relative to the playlist file's own directory. Reading a
+playlist from stdin skips that check for relative paths, since there's
+no directory to resolve them against; absolute paths are still
+checked either way.
 
 Exit codes: `0` means no findings, `1` means findings were reported,
 `2` means a file or stdin could not be read.
