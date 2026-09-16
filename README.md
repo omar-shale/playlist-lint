@@ -64,8 +64,16 @@ playlist from stdin skips that check for relative paths, since there's
 no directory to resolve them against; absolute paths are still
 checked either way.
 
-Exit codes: `0` means no findings, `1` means findings were reported,
-`2` means a file or stdin could not be read.
+Exit codes: `0` means no findings (or only warnings, without `--strict`),
+`1` means an error-level finding was reported, `2` means a file or
+stdin could not be read.
+
+Pass `--strict` to also exit `1` on warnings, which is useful in CI
+where you want any finding to fail the build:
+
+```
+$ plint --strict road_trip.m3u
+```
 
 ## Building
 

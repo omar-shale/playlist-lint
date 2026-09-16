@@ -1,6 +1,6 @@
 mod lint;
 
-use lint::{lint_playlist, Finding};
+use lint::{lint_playlist, Finding, Severity};
 use std::env;
 use std::fs;
 use std::io::{self, Read};
@@ -8,16 +8,25 @@ use std::path::Path;
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
-    let args: Vec<String> = env::args().skip(1).collect();
+    let mut strict = false;
+    let mut paths: Vec<String> = Vec::new();
 
-    let mut had_findings = false;
+    for arg in env::args().skip(1) {
+        if arg == "--strict" {
+            strict = true;
+        } else {
+            paths.push(arg);
+        }
+    }
+
+    let mut had_error = false;
     let mut had_io_error = false;
 
-    if args.is_empty() {
+    if paths.is_empty() {
         match read_stdin() {
             Ok(contents) => {
                 let findings = lint_playlist(&contents, None);
-                had_findings |= print_findings("<stdin>", &findings);
+                had_error |= print_findings("<stdin>", &findings, strict);
             }
             Err(e) => {
                 eprintln!("plint: error reading stdin: {e}");
@@ -25,7 +34,7 @@ fn main() -> ExitCode {
             }
         }
     } else {
-        for path in &args {
+        for path in &paths {
             let contents = if path == "-" {
                 read_stdin()
             } else {
@@ -40,7 +49,7 @@ fn main() -> ExitCode {
                         Path::new(path).parent()
                     };
                     let findings = lint_playlist(&contents, base_dir);
-                    had_findings |= print_findings(path, &findings);
+                    had_error |= print_findings(path, &findings, strict);
                 }
                 Err(e) => {
                     eprintln!("plint: error reading {path}: {e}");
@@ -52,7 +61,7 @@ fn main() -> ExitCode {
 
     if had_io_error {
         ExitCode::from(2)
-    } else if had_findings {
+    } else if had_error {
         ExitCode::from(1)
     } else {
         ExitCode::SUCCESS
@@ -65,7 +74,11 @@ fn read_stdin() -> io::Result<String> {
     Ok(buf)
 }
 
-fn print_findings(source_name: &str, findings: &[Finding]) -> bool {
+/// Prints every finding and reports whether the run should be treated as
+/// a failure: always true if any finding is an error, or if `strict` is
+/// set and there's a warning.
+fn print_findings(source_name: &str, findings: &[Finding], strict: bool) -> bool {
+    let mut had_error = false;
     for finding in findings {
         println!(
             "{source_name}:{}: {}: {}",
@@ -73,6 +86,7 @@ fn print_findings(source_name: &str, findings: &[Finding]) -> bool {
             finding.severity.as_str(),
             finding.message
         );
+        had_error |= finding.severity == Severity::Error || strict;
     }
-    !findings.is_empty()
+    had_error
 }
