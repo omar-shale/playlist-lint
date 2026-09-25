@@ -75,6 +75,19 @@ where you want any finding to fail the build:
 $ plint --strict road_trip.m3u
 ```
 
+Pass `--json` to get one JSON object per finding instead of the plain
+text format, for feeding into an editor or other tool:
+
+```
+$ plint --json road_trip.m3u
+{"file":"road_trip.m3u","line":14,"severity":"error","message":"#EXTINF entry has no following track"}
+{"file":"road_trip.m3u","line":22,"severity":"warning","message":"duplicate track entry 'songs/interlude.mp3'"}
+```
+
+Each line is a standalone JSON object rather than the whole run being
+wrapped in one array, so a consumer can start acting on findings as
+they're printed instead of waiting for `plint` to finish every file.
+
 ## Building
 
 Standard library only, no dependencies:
